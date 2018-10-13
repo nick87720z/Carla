@@ -1831,15 +1831,16 @@ class CanvasBezierLine(QGraphicsPathItem):
 
 class CanvasLineMov(QGraphicsLineItem):
     def __init__(self, port_mode, port_type, parent):
-        QGraphicsLineItem.__init__(self, parent)
+        QGraphicsLineItem.__init__(self, None)
+        canvas.scene.addItem(self)
 
         self.m_port_mode = port_mode
         self.m_port_type = port_type
 
         # Port position doesn't change while moving around line
-        self.p_lineX = self.scenePos().x()
-        self.p_lineY = self.scenePos().y()
-        self.p_width = self.parentItem().getPortWidth()
+        self.p_lineX = parent.scenePos().x()
+        self.p_lineY = parent.scenePos().y()
+        self.p_width = parent.getPortWidth()
 
         if port_type == PORT_TYPE_AUDIO_JACK:
             pen = QPen(canvas.theme.line_audio_jack, 2)
@@ -1861,15 +1862,15 @@ class CanvasLineMov(QGraphicsLineItem):
         item_pos = [0, 0]
 
         if self.m_port_mode == PORT_MODE_INPUT:
-            item_pos[0] = 0
-            item_pos[1] = float(canvas.theme.port_height)/2
+            item_pos[0] = self.p_lineX
+            item_pos[1] = self.p_lineY + float(canvas.theme.port_height)/2
         elif self.m_port_mode == PORT_MODE_OUTPUT:
-            item_pos[0] = self.p_width + 12
-            item_pos[1] = float(canvas.theme.port_height)/2
+            item_pos[0] = self.p_lineX + self.p_width + 12
+            item_pos[1] = self.p_lineY + float(canvas.theme.port_height)/2
         else:
             return
 
-        line = QLineF(item_pos[0], item_pos[1], scenePos.x() - self.p_lineX, scenePos.y() - self.p_lineY)
+        line = QLineF(item_pos[0], item_pos[1], scenePos.x(), scenePos.y())
         self.setLine(line)
 
     def type(self):
@@ -1886,15 +1887,16 @@ class CanvasLineMov(QGraphicsLineItem):
 
 class CanvasBezierLineMov(QGraphicsPathItem):
     def __init__(self, port_mode, port_type, parent):
-        QGraphicsPathItem.__init__(self, parent)
+        QGraphicsPathItem.__init__(self, None)
+        canvas.scene.addItem(self)
 
         self.m_port_mode = port_mode
         self.m_port_type = port_type
 
         # Port position doesn't change while moving around line
-        self.p_itemX = self.scenePos().x()
-        self.p_itemY = self.scenePos().y()
-        self.p_width = self.parentItem().getPortWidth()
+        self.p_itemX = parent.scenePos().x()
+        self.p_itemY = parent.scenePos().y()
+        self.p_width = parent.getPortWidth()
 
         if port_type == PORT_TYPE_AUDIO_JACK:
             pen = QPen(canvas.theme.line_audio_jack, 2)
@@ -1913,21 +1915,20 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         self.setPen(pen)
 
     def updateLinePos(self, scenePos):
+        final_x = scenePos.x()
         if self.m_port_mode == PORT_MODE_INPUT:
-            old_x = 0
-            old_y = float(canvas.theme.port_height)/2
-            mid_x = abs(scenePos.x() - self.p_itemX) / 2
+            old_x = self.p_itemX
+            mid_x = abs(final_x - old_x) / 2
             new_x = old_x - mid_x
         elif self.m_port_mode == PORT_MODE_OUTPUT:
-            old_x = self.p_width + 12
-            old_y = float(canvas.theme.port_height)/2
-            mid_x = abs(scenePos.x() - (self.p_itemX + old_x)) / 2
+            old_x = self.p_itemX + self.p_width + 12
+            mid_x = abs(final_x - old_x) / 2
             new_x = old_x + mid_x
         else:
             return
 
-        final_x = scenePos.x() - self.p_itemX
-        final_y = scenePos.y() - self.p_itemY
+        old_y = self.p_itemY + float(canvas.theme.port_height)/2
+        final_y = scenePos.y()
 
         path = QPainterPath(QPointF(old_x, old_y))
         path.cubicTo(new_x, old_y, new_x, final_y, final_x, final_y)
