@@ -1096,6 +1096,10 @@ def handleAllPluginsRemoved():
             group.widgets[1].m_plugin_id = -1
             group.widgets[1].m_plugin_ui = False
 
+def clearPortsSelection():
+    for port in canvas.port_list:
+        port.widget.setSelected(False)
+
 # Extra Internal functions
 
 def CanvasGetNewGroupPos(horizontal):
@@ -1442,6 +1446,7 @@ class PatchScene(QGraphicsScene):
             item = self.itemAt(event.scenePos(), QTransform())
             if not self.m_ctrl_down and (not item or item.type() != CanvasPortType):
                 options.chain_select_ports = 0
+                clearPortsSelection()
 
         QGraphicsScene.mousePressEvent(self, event)
 
