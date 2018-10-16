@@ -1666,7 +1666,7 @@ class CanvasLine(QGraphicsLineItem):
         if self.m_locked:
             return
 
-        yesno = self.item1.isSelected() or self.item2.isSelected()
+        yesno = self.item1.isSelected() and self.item2.isSelected()
         if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
             if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
@@ -1787,7 +1787,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         if self.m_locked:
             return
 
-        yesno = self.item1.isSelected() or self.item2.isSelected()
+        yesno = self.item1.isSelected() and self.item2.isSelected()
         if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
             if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
