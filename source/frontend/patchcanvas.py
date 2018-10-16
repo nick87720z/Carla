@@ -112,6 +112,7 @@ class options_t(object):
         'theme_name',
         'auto_hide_groups',
         'auto_select_items',
+        'chain_select_ports',
         'use_bezier_lines',
         'antialiasing',
         'eyecandy'
@@ -253,11 +254,12 @@ canvas.animation_list  = []
 
 options = options_t()
 options.theme_name = getDefaultThemeName()
-options.auto_hide_groups  = False
-options.auto_select_items = False
-options.use_bezier_lines  = True
-options.antialiasing      = ANTIALIASING_SMALL
-options.eyecandy          = EYECANDY_SMALL
+options.auto_hide_groups   = False
+options.auto_select_items  = False
+options.chain_select_ports = 1
+options.use_bezier_lines   = True
+options.antialiasing       = ANTIALIASING_SMALL
+options.eyecandy           = EYECANDY_SMALL
 
 features = features_t()
 features.group_info   = False
@@ -2038,6 +2040,7 @@ class CanvasPort(QGraphicsItem):
 
         self.m_mouse_down = False
         self.m_cursor_moving = False
+        self.m_direct_selection = False
 
         self.setFlags(QGraphicsItem.ItemIsSelectable)
 
@@ -2095,11 +2098,13 @@ class CanvasPort(QGraphicsItem):
 
     def hoverEnterEvent(self, event):
         if options.auto_select_items:
+            self.m_direct_selection = True
             self.setSelected(True)
         QGraphicsItem.hoverEnterEvent(self, event)
 
     def hoverLeaveEvent(self, event):
         if options.auto_select_items:
+            self.m_direct_selection = True
             self.setSelected(False)
         QGraphicsItem.hoverLeaveEvent(self, event)
 
@@ -2197,6 +2202,10 @@ class CanvasPort(QGraphicsItem):
 
                 canvas.scene.clearSelection()
 
+            if not options.auto_select_items:
+                self.m_direct_selection = True
+                self.propagateSelectionState(self.isSelected())
+
         if self.m_cursor_moving:
             self.unsetCursor()
 
@@ -2250,11 +2259,33 @@ class CanvasPort(QGraphicsItem):
         elif act_selected == act_x_rename:
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
 
-    def setPortSelected(self, yesno):
+    # Chain selection behavior:
+    # - Second side / Auto selection: propagate if selected
+    # - second side / Mouse click: propagate if selected, propagate again on mouse release
+    # - Full chain: always propagate own state
+
+    def propagateSelectionState(self, yesno):
+        if canvas.debug:
+            print("CanvasPort::propagateSelectionState(%i)" % (yesno))
+
+        if self.m_mouse_down and not options.auto_select_items:
+            self.m_direct_selection = True
+
         for connection in canvas.connection_list:
             if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
                 (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
-                    connection.widget.updateLineSelected()
+
+                item = connection.widget.item2 if self.m_port_mode == PORT_MODE_OUTPUT else connection.widget.item1
+                if options.chain_select_ports > 0:
+                    if self.m_direct_selection or options.chain_select_ports == 2:
+                        item.setSelected(yesno)
+                connection.widget.updateLineSelected()
+        self.m_direct_selection = False
+
+    def setPortSelected(self, yesno):
+        if canvas.debug:
+            print("CanvasPort::setPortSelected(%i)" % (yesno))
+        self.propagateSelectionState(yesno)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:
