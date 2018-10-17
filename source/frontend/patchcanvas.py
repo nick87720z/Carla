@@ -1219,6 +1219,21 @@ class PatchScene(QGraphicsScene):
     sceneGroupMoved = pyqtSignal(int, int, QPointF)
     pluginSelected  = pyqtSignal(list)
 
+    __slots__ = [
+        'm_ctrl_down',
+        'm_scale_area',
+        'm_mouse_down_init',
+        'm_mouse_rubberband',
+        'm_mid_button_down',
+        'm_pointer_border',
+        'm_rubberband',
+        'm_view',
+        'curCut',
+        'curZoomArea',
+
+        'scale_min'
+    ]
+
     def __init__(self, parent, view):
         QGraphicsScene.__init__(self, parent)
 
@@ -1543,6 +1558,12 @@ class PatchScene(QGraphicsScene):
 # canvasfadeanimation.cpp
 
 class CanvasFadeAnimation(QAbstractAnimation):
+    __slots__ = [
+        'm_show',
+        'm_duration',
+        'm_item'
+    ]
+
     def __init__(self, item, show):
         QAbstractAnimation.__init__(self)
 
@@ -1597,6 +1618,13 @@ class CanvasFadeAnimation(QAbstractAnimation):
 # canvasline.cpp
 
 class CanvasLine(QGraphicsLineItem):
+    __slots__ = [
+        'item1',
+        'item2',
+        'm_locked',
+        'm_lineSelected'
+    ]
+
     def __init__(self, item1, item2, parent):
         QGraphicsLineItem.__init__(self, parent)
 
@@ -1710,6 +1738,13 @@ class CanvasLine(QGraphicsLineItem):
 # canvasbezierline.cpp
 
 class CanvasBezierLine(QGraphicsPathItem):
+    __slots__ = [
+        'item1',
+        'item2',
+        'm_locked',
+        'm_lineSelected'
+    ]
+
     def __init__(self, item1, item2, parent):
         QGraphicsPathItem.__init__(self, parent)
 
@@ -1830,6 +1865,14 @@ class CanvasBezierLine(QGraphicsPathItem):
 # canvaslivemov.cpp
 
 class CanvasLineMov(QGraphicsLineItem):
+    __slots__ = [
+        'm_port_mode',
+        'm_port_type',
+        'p_lineX',
+        'p_lineY',
+        'p_width'
+    ]
+
     def __init__(self, port_mode, port_type, parent):
         QGraphicsLineItem.__init__(self, None)
         canvas.scene.addItem(self)
@@ -1886,6 +1929,14 @@ class CanvasLineMov(QGraphicsLineItem):
 # canvasbezierlinemov.cpp
 
 class CanvasBezierLineMov(QGraphicsPathItem):
+    __slots__ = [
+        'm_port_mode',
+        'm_port_type',
+        'p_itemX',
+        'p_itemY',
+        'p_width'
+    ]
+
     def __init__(self, port_mode, port_type, parent):
         QGraphicsPathItem.__init__(self, None)
         canvas.scene.addItem(self)
@@ -1947,6 +1998,22 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 # canvasport.cpp
 
 class CanvasPort(QGraphicsItem):
+    __slots__ = [
+        'm_group_id',
+        'm_port_id',
+        'm_port_mode',
+        'm_port_type',
+        'm_port_name',
+        'm_is_alternate',
+        'm_port_width',
+        'm_port_height',
+        'm_port_font',
+        'm_line_mov',
+        'm_hover_item',
+        'm_mouse_down',
+        'm_cursor_moving'
+    ]
+
     def __init__(self, group_id, port_id, port_name, port_mode, port_type, is_alternate, parent):
         QGraphicsItem.__init__(self, parent)
 
@@ -2340,6 +2407,27 @@ class cb_line_t(object):
     ]
 
 class CanvasBox(QGraphicsItem):
+    __slots__ = [
+        'm_group_id',
+        'm_group_name',
+        'm_plugin_id',
+        'm_plugin_ui',
+        'p_width',
+        'p_height',
+        'm_last_pos',
+        'm_splitted',
+        'm_splitted_mode',
+        'm_cursor_moving',
+        'm_forced_split',
+        'm_mouse_down',
+        'm_port_list_ids',
+        'm_connection_lines',
+        'm_font_name',
+        'm_font_port',
+        'icon_svg',
+        'shadow'
+    ]
+
     def __init__(self, group_id, group_name, icon, parent=None):
         QGraphicsItem.__init__(self, parent)
 
@@ -2854,6 +2942,12 @@ class CanvasBox(QGraphicsItem):
 # canvasicon.cpp
 
 class CanvasIcon(QGraphicsSvgItem):
+    __slots__ = [
+        'm_renderer',
+        'p_size',
+        'm_colorFX'
+    ]
+
     def __init__(self, icon, name, parent):
         QGraphicsSvgItem.__init__(self, parent)
 
@@ -2965,6 +3059,10 @@ class CanvasPortGlow(QGraphicsDropShadowEffect):
 # canvasboxshadow.cpp
 
 class CanvasBoxShadow(QGraphicsDropShadowEffect):
+    __slots__ = [
+        'm_fakeParent'
+    ]
+
     def __init__(self, parent):
         QGraphicsDropShadowEffect.__init__(self, parent)
 
