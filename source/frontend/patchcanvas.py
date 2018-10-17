@@ -32,14 +32,14 @@ if config_UseQt5:
     from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
     from PyQt5.QtGui import QCursor, QFont, QFontMetrics
     from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
-    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
+    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsObject, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
     from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
 else:
     from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
     from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
     from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
     from PyQt4.QtGui import QCursor, QFont, QFontMetrics
-    from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
+    from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsObject, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
     from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
     from PyQt4.QtSvg import QGraphicsSvgItem, QSvgRenderer
 
@@ -1997,7 +1997,9 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 # ------------------------------------------------------------------------------
 # canvasport.cpp
 
-class CanvasPort(QGraphicsItem):
+class CanvasPort(QGraphicsObject):
+    selectionChanged = pyqtSignal(bool)
+
     __slots__ = [
         'm_group_id',
         'm_port_id',
@@ -2251,6 +2253,8 @@ class CanvasPort(QGraphicsItem):
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
 
     def setPortSelected(self, yesno):
+        self.selectionChanged.emit(yesno)
+
         for connection in canvas.connection_list:
             if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
                 (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
