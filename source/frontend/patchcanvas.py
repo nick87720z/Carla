@@ -29,7 +29,7 @@ from math import floor
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
     from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
-    from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
+    from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath, QTransform
     from PyQt5.QtGui import QCursor, QFont, QFontMetrics
     from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
     from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
@@ -37,7 +37,7 @@ if config_UseQt5:
 else:
     from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
     from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
-    from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
+    from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath, QTransform
     from PyQt4.QtGui import QCursor, QFont, QFontMetrics
     from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
     from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
@@ -1436,7 +1436,16 @@ class PatchScene(QGraphicsScene):
             for item in items:
                 if item and item.type() in [CanvasLineType, CanvasBezierLineType, CanvasPortType]:
                     item.triggerDisconnect()
+
+        chain_sel = options.chain_select_ports
+        if event.button() == Qt.LeftButton:
+            item = self.itemAt(event.scenePos(), QTransform())
+            if not self.m_ctrl_down and (not item or item.type() != CanvasPortType):
+                options.chain_select_ports = 0
+
         QGraphicsScene.mousePressEvent(self, event)
+
+        options.chain_select_ports = chain_sel
 
     def mouseMoveEvent(self, event):
         if self.m_mouse_down_init:
@@ -2279,6 +2288,8 @@ class CanvasPort(QGraphicsItem):
                 if options.chain_select_ports > 0:
                     if self.m_direct_selection or options.chain_select_ports == 2:
                         item.setSelected(yesno)
+                    elif not item.m_direct_selection and item.isSelected():
+                        self.setSelected(True)
                 connection.widget.updateLineSelected()
         self.m_direct_selection = False
 
