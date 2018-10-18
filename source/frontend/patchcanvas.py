@@ -21,6 +21,8 @@
 
 from carla_config import *
 
+import traceback
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
@@ -112,6 +114,7 @@ class options_t(object):
         'theme_name',
         'auto_hide_groups',
         'auto_select_items',
+        'chain_select_ports',
         'use_bezier_lines',
         'antialiasing',
         'eyecandy'
@@ -253,11 +256,12 @@ canvas.animation_list  = []
 
 options = options_t()
 options.theme_name = getDefaultThemeName()
-options.auto_hide_groups  = False
-options.auto_select_items = False
-options.use_bezier_lines  = True
-options.antialiasing      = ANTIALIASING_SMALL
-options.eyecandy          = EYECANDY_SMALL
+options.auto_hide_groups   = False
+options.auto_select_items  = False
+options.chain_select_ports = 1
+options.use_bezier_lines   = True
+options.antialiasing       = ANTIALIASING_SMALL
+options.eyecandy           = EYECANDY_SMALL
 
 features = features_t()
 features.group_info   = False
@@ -395,9 +399,12 @@ def clear():
     if canvas.debug:
         print("PatchCanvas::clear()")
 
+    eyecandy = options.eyecandy
     group_list_ids = []
     port_list_ids  = []
     connection_list_ids = []
+
+    options.eyecandy = EYECANDY_NONE
 
     for group in canvas.group_list:
         group_list_ids.append(group.group_id)
@@ -439,6 +446,8 @@ def clear():
     canvas.initiated = False
 
     QTimer.singleShot(0, canvas.scene.update)
+
+    options.eyecandy = eyecandy
 
 def setInitialPos(x, y):
     if canvas.debug:
@@ -976,6 +985,9 @@ def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_
     else:
         connection_dict.widget = CanvasLine(port_out, port_in, None)
 
+    port_out.selectionChanged.connect(port_in.slot_neighbourPortSelected)
+    port_in.selectionChanged.connect(port_out.slot_neighbourPortSelected)
+
     canvas.scene.addItem(connection_dict.widget)
 
     port_out_parent.addLineFromGroup(connection_dict.widget, connection_id)
@@ -1038,6 +1050,8 @@ def disconnectPorts(connection_id):
         qCritical("PatchCanvas::disconnectPorts(%i) - unable to find input port" % connection_id)
         return
 
+    item1.selectionChanged.disconnect(item2.slot_neighbourPortSelected)
+    item2.selectionChanged.disconnect(item1.slot_neighbourPortSelected)
     item1.parentItem().removeLineFromGroup(connection_id)
     item2.parentItem().removeLineFromGroup(connection_id)
 
@@ -1771,7 +1785,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         if self.m_locked:
             return
 
-        yesno = self.item1.isSelected() or self.item2.isSelected()
+        yesno = self.item1.isSelected() and self.item2.isSelected()
         if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
             if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
@@ -2252,7 +2266,34 @@ class CanvasPort(QGraphicsObject):
         elif act_selected == act_x_rename:
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
 
+    @pyqtSlot(bool)
+    def slot_neighbourPortSelected(self, yesno):
+        sender = self.sender()
+        mode = self.getPortMode()
+        selected = self.isSelected()
+        print(self.getPortName(), ": neighbour selected: ", bool(yesno), " (", sender.getPortName(), ")")
+
+        # Ignore doublicate signals
+        if selected != yesno:
+            if not yesno:
+                for connection in canvas.connection_list:
+                    if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
+                        (connection.group_in_id  == self.m_group_id and connection.port_in_id  == self.m_port_id)):
+
+                        neighbour = connection.widget.item2 if mode == PORT_MODE_OUTPUT else connection.widget.item1
+                        if neighbour != sender and neighbour.isSelected():
+                            yesno = True
+                            break
+            self.blockSignals(True)
+            self.setSelected(yesno)
+            self.blockSignals(False)
+
     def setPortSelected(self, yesno):
+        if self.m_mouse_down:
+            print(self.getPortName(), ": user selection:", bool(yesno))
+        else:
+            print(self.getPortName(), ": side selection: ", bool(yesno))
+
         self.selectionChanged.emit(yesno)
 
         for connection in canvas.connection_list:
